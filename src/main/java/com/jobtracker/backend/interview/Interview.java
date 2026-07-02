@@ -28,7 +28,7 @@ public class Interview {
     private InterviewType type;
 
     @Column(columnDefinition = "TEXT")
-    private String note;
+    private String notes;
 
     private LocalDateTime scheduleAt;
 

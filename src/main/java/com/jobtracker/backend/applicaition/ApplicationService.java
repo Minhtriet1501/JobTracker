@@ -19,38 +19,71 @@ public class ApplicationService {
         return userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public List<Application> getAllApplications(String email) {
-        return applicationRepository.findByUser(getUser(email));
+    private ApplicationResponse toResponse(Application app) {
+        ApplicationResponse res =  new ApplicationResponse();
+        res.setId(app.getId());
+        res.setCompanyName(app.getCompanyName());
+        res.setPosition(app.getPosition());
+        res.setStatus(app.getStatus());
+        res.setAppliedDate(app.getAppliedDate());
+        res.setDeadLine(app.getDeadLine());
+        res.setJobUrl(app.getJobUrl());
+        res.setNotes(app.getNotes());
+        res.setSalaryRange(app.getSalaryRange());
+        res.setCreatedAt(app.getCreatedAt());
+        res.setUpdatedAt(app.getUpdatedAt());
+        return res;
+
     }
 
-    public Application getById(Long id,  String email) {
+    public List<ApplicationResponse> getAllApplications(String email) {
+        return applicationRepository.findByUser(getUser(email))
+                .stream().map(this::toResponse).toList();
+    }
+
+    public ApplicationResponse getById(Long id,  String email) {
         Application app = applicationRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
             throw new RuntimeException("Unauthorized");
         }
-        return app;
+        return toResponse(app);
     }
 
-    public Application createApplication(Application application, String email) {
-        application.setUser(getUser(email));
-        return applicationRepository.save(application);
+    public ApplicationResponse createApplication(ApplicationRequest request, String email) {
+        Application app = new Application();
+        app.setUser(getUser(email));
+        app.setCompanyName(request.getCompanyName());
+        app.setPosition(request.getPosition());
+        app.setStatus(request.getStatus());
+        app.setAppliedDate(request.getAppliedDate());
+        app.setDeadLine(request.getDeadLine());
+        app.setJobUrl(request.getJobUrl());
+        app.setNotes(request.getNotes());
+        app.setSalaryRange(request.getSalaryRange());
+        return toResponse(applicationRepository.save(app));
     }
 
-    public Application updateApplication(Long id, Application updated,  String email) {
-        Application app = getById(id, email);
-        app.setCompanyName(updated.getCompanyName());
-        app.setPosition(updated.getPosition());
-        app.setStatus(updated.getStatus());
-        app.setAppliedDate(updated.getAppliedDate());
-        app.setDeadLine(updated.getDeadLine());
-        app.setJobUrl(updated.getJobUrl());
-        app.setNotes(updated.getNotes());
-        app.setSalaryRange(updated.getSalaryRange());
-        return applicationRepository.save(app);
+    public ApplicationResponse updateApplication(Long id, ApplicationRequest request,  String email) {
+        Application app = applicationRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Application not found"));
+        if(!app.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        app.setCompanyName(request.getCompanyName());
+        app.setPosition(request.getPosition());
+        app.setStatus(request.getStatus());
+        app.setAppliedDate(request.getAppliedDate());
+        app.setDeadLine(request.getDeadLine());
+        app.setJobUrl(request.getJobUrl());
+        app.setNotes(request.getNotes());
+        app.setSalaryRange(request.getSalaryRange());
+        return toResponse(applicationRepository.save(app));
     }
 
     public void deleteApplication(Long id, String email) {
-        Application app = getById(id, email);
+        Application app = applicationRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Application not found"));
+        if(!app.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
         applicationRepository.delete(app);
     }
 }

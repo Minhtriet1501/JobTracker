@@ -16,22 +16,22 @@ public class ApplicationController {
     private final ApplicationService applicationService;
 
     @GetMapping
-    public List<Application> getAll(@AuthenticationPrincipal UserDetails userDetails ) {
+    public List<ApplicationResponse> getAll(@AuthenticationPrincipal UserDetails userDetails ) {
         return applicationService.getAllApplications(userDetails.getUsername());
     }
 
     @GetMapping("/{id}")
-    public Application getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
+    public ApplicationResponse getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
         return applicationService.getById(id, userDetails.getUsername());
     }
 
     @PostMapping
-    public Application create(@RequestBody Application application, @AuthenticationPrincipal UserDetails userDetails) {
+    public ApplicationResponse create(@RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
         return applicationService.createApplication(application, userDetails.getUsername());
     }
 
     @PutMapping("/{id}")
-    public Application update(@PathVariable Long id, @RequestBody Application application, @AuthenticationPrincipal UserDetails userDetails) {
+    public ApplicationResponse update(@PathVariable Long id, @RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
         return  applicationService.updateApplication(id, application, userDetails.getUsername());
     }
 
