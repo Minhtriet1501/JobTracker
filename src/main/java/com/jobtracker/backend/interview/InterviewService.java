@@ -30,6 +30,7 @@ public class InterviewService {
         res.setRound(interview.getRound());
         res.setType(interview.getType());
         res.setNotes(interview.getNotes());
+        res.setScheduleAt(interview.getScheduleAt());
         res.setOutcome(interview.getOutcome());
         return res;
     }
@@ -46,15 +47,20 @@ public class InterviewService {
         interview.setRound(request.getRound());
         interview.setType(request.getType());
         interview.setNotes(request.getNotes());
+        interview.setScheduleAt(request.getScheduleAt());
         interview.setOutcome(request.getOutcome());
         return toResponse(interviewRepository.save(interview));
     }
 
     public InterviewResponse update(Long id, InterviewRequest request, String email) {
         Interview interview = interviewRepository.findById(id).orElseThrow(() -> new RuntimeException("Interview not found"));
+        if(!interview.getApplication().getUser().getEmail().equals(email)) {
+            throw new RuntimeException("UnAuthorized");
+        }
         interview.setRound(request.getRound());
         interview.setType(request.getType());
         interview.setNotes(request.getNotes());
+        interview.setScheduleAt(request.getScheduleAt());
         interview.setOutcome(request.getOutcome());
         return toResponse(interviewRepository.save(interview));
     }

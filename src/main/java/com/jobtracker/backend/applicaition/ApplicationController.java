@@ -26,8 +26,9 @@ public class ApplicationController {
     }
 
     @PostMapping
-    public ApplicationResponse create(@RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
-        return applicationService.createApplication(application, userDetails.getUsername());
+    public ResponseEntity<ApplicationResponse> create(@RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
+        ApplicationResponse res = applicationService.createApplication(application, userDetails.getUsername());
+        return ResponseEntity.status(201).body(res);
     }
 
     @PutMapping("/{id}")
