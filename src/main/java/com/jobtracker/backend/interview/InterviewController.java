@@ -40,6 +40,4 @@ public class InterviewController {
         interviewService.delete(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
-
-
 }
