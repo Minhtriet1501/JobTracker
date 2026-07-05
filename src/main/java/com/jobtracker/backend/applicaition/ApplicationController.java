@@ -1,6 +1,7 @@
 package com.jobtracker.backend.applicaition;
 
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,13 +27,13 @@ public class ApplicationController {
     }
 
     @PostMapping
-    public ResponseEntity<ApplicationResponse> create(@RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApplicationResponse> create(@Valid @RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
         ApplicationResponse res = applicationService.createApplication(application, userDetails.getUsername());
         return ResponseEntity.status(201).body(res);
     }
 
     @PutMapping("/{id}")
-    public ApplicationResponse update(@PathVariable Long id, @RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
+    public ApplicationResponse update(@PathVariable Long id,@Valid @RequestBody ApplicationRequest application, @AuthenticationPrincipal UserDetails userDetails) {
         return  applicationService.updateApplication(id, application, userDetails.getUsername());
     }
 

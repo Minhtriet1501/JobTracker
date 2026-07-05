@@ -1,9 +1,11 @@
 package com.jobtracker.backend.applicaition;
 
 
+import com.jobtracker.backend.common.ResourceNotFoundException;
 import com.jobtracker.backend.user.User;
 import com.jobtracker.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -42,9 +44,9 @@ public class ApplicationService {
     }
 
     public ApplicationResponse getById(Long id,  String email) {
-        Application app = applicationRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Application not found"));
+        Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("UnAuthorized");
         }
         return toResponse(app);
     }
@@ -64,9 +66,9 @@ public class ApplicationService {
     }
 
     public ApplicationResponse updateApplication(Long id, ApplicationRequest request,  String email) {
-        Application app = applicationRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Application not found"));
+        Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("UnAuthorized");
         }
         app.setCompanyName(request.getCompanyName());
         app.setPosition(request.getPosition());
@@ -80,9 +82,9 @@ public class ApplicationService {
     }
 
     public void deleteApplication(Long id, String email) {
-        Application app = applicationRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Application not found"));
+        Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("UnAuthorized");
         }
         applicationRepository.delete(app);
     }

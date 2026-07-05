@@ -1,5 +1,6 @@
 package com.jobtracker.backend.interview;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,7 +23,7 @@ public class InterviewController {
 
     @PostMapping
     public ResponseEntity<InterviewResponse> create(@PathVariable Long applicationId,
-                                                    @RequestBody InterviewRequest request,
+                                                    @Valid @RequestBody InterviewRequest request,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
         InterviewResponse res = interviewService.create(applicationId, request, userDetails.getUsername());
         return ResponseEntity.status(201).body(res);
@@ -30,7 +31,7 @@ public class InterviewController {
 
     @PutMapping("/{id}")
     public InterviewResponse update(@PathVariable Long id,
-                                    @RequestBody InterviewRequest request,
+                                    @Valid @RequestBody InterviewRequest request,
                                     @AuthenticationPrincipal UserDetails userDetails) {
         return interviewService.update(id, request, userDetails.getUsername());
     }

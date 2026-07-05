@@ -1,6 +1,7 @@
 package com.jobtracker.backend.user;
 
 
+import com.jobtracker.backend.common.EmailAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -27,7 +28,7 @@ public class UserService implements UserDetailsService {
 
     public User register(String email, String password, String name) {
         if(userRepository.existsByEmail(email)) {
-            throw new UsernameNotFoundException("Email already exists");
+            throw new EmailAlreadyExistsException("Email already exists");
         }
         User user = new User();
         user.setEmail(email);
