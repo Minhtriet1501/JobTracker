@@ -1,15 +1,17 @@
 package com.jobtracker.backend.applicaition;
 
 
+import com.jobtracker.backend.common.UnauthorizedException;
 import com.jobtracker.backend.common.ResourceNotFoundException;
 import com.jobtracker.backend.user.User;
 import com.jobtracker.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,17 +40,44 @@ public class ApplicationService {
 
     }
 
-    public List<ApplicationResponse> getAllApplications(String email) {
-        return applicationRepository.findByUser(getUser(email))
-                .stream().map(this::toResponse).toList();
+    public List<ApplicationResponse> getAllApplications(String email, ApplicationStatus status,  String companyName) {
+        List<Application> applications;
+        if(status != null && companyName != null) {
+            applications = applicationRepository.findByUserAndStatusAndCompanyNameContainingIgnoreCase(getUser(email), status, companyName);
+        }
+        else if(status != null) {
+            applications = applicationRepository.findByUserAndStatus(getUser(email), status);
+        }
+        else if(companyName != null) {
+            applications = applicationRepository.findByUserAndCompanyNameContainingIgnoreCase(getUser(email), companyName);
+        }
+        else {
+            applications = applicationRepository.findByUser(getUser(email));
+        }
+
+
+        return applications.stream().map(this::toResponse).toList();
     }
 
     public ApplicationResponse getById(Long id,  String email) {
         Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("UnAuthorized");
+            throw new UnauthorizedException();
         }
         return toResponse(app);
+    }
+
+    public ApplicationStatsResponse getStats(String email) {
+        User user = getUser(email);
+        Map<String, Long> byStatus = new HashMap<>();
+        for(ApplicationStatus status : ApplicationStatus.values()) {
+            byStatus.put(status.name(), applicationRepository.countByUserAndStatus(user, status));
+        }
+
+        ApplicationStatsResponse stats = new ApplicationStatsResponse();
+        stats.setTotal(applicationRepository.countByUser(user));
+        stats.setByStatus(byStatus);
+        return stats;
     }
 
     public ApplicationResponse createApplication(ApplicationRequest request, String email) {
@@ -68,7 +97,7 @@ public class ApplicationService {
     public ApplicationResponse updateApplication(Long id, ApplicationRequest request,  String email) {
         Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("UnAuthorized");
+            throw new UnauthorizedException();
         }
         app.setCompanyName(request.getCompanyName());
         app.setPosition(request.getPosition());
@@ -84,7 +113,7 @@ public class ApplicationService {
     public void deleteApplication(Long id, String email) {
         Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("UnAuthorized");
+            throw new UnauthorizedException();
         }
         applicationRepository.delete(app);
     }

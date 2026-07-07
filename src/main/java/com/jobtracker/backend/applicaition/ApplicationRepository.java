@@ -11,4 +11,8 @@ import java.util.List;
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
     List<Application> findByUser(User user);
     List<Application> findByUserAndStatus(User user, ApplicationStatus status);
+    List<Application> findByUserAndCompanyNameContainingIgnoreCase(User user, String companyName);
+    List<Application> findByUserAndStatusAndCompanyNameContainingIgnoreCase(User user, ApplicationStatus status, String companyName);
+    long countByUserAndStatus(User user, ApplicationStatus status);
+    long countByUser(User user);
 }

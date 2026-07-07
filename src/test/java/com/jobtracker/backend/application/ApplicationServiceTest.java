@@ -50,11 +50,13 @@ public class ApplicationServiceTest {
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
         when(applicationRepository.findByUser(mockUser)).thenReturn(List.of(mockApplication));
 
-        List<ApplicationResponse> result = applicationService.getAllApplications(email);
+        List<ApplicationResponse> result = applicationService.getAllApplications(email, null, null);
 
         assertEquals(1, result.size());
         assertEquals("Amazon", result.get(0).getCompanyName());
     }
+
+
 
     @Test
     void createValidRequestReturnResponse() {
@@ -84,11 +86,42 @@ public class ApplicationServiceTest {
         verify(applicationRepository).delete(mockApplication);
     }
 
+
     @Test
     void deleteWrongOwerThrowsException() {
         when(applicationRepository.findById(1L)).thenReturn(Optional.of(mockApplication));
 
         assertThrows(RuntimeException.class , () -> applicationService.deleteApplication(1L, "wrongEmail"));
+    }
+
+    @Test
+    void getStatsReturnCorrectTotalAndByStatus() {
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(applicationRepository.countByUser(mockUser)).thenReturn(3L);
+        for (ApplicationStatus s : ApplicationStatus.values()) {
+            long count = s == ApplicationStatus.APPLIED ? 2L : s == ApplicationStatus.INTERVIEWING ? 1L : 0L;
+            when(applicationRepository.countByUserAndStatus(mockUser, s)).thenReturn(count);
+        }
+
+        ApplicationStatsResponse stats = applicationService.getStats(email);
+
+        assertEquals(3L, stats.getTotal());
+        assertEquals(2L, stats.getByStatus().get("APPLIED"));
+        assertEquals(1L, stats.getByStatus().get("INTERVIEWING"));
+        assertEquals(0L, stats.getByStatus().get("REJECTED"));
+    }
+
+    @Test
+    void getStatsNoApplicationsReturnZeros() {
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(applicationRepository.countByUser(mockUser)).thenReturn(0L);
+
+        ApplicationStatsResponse stats = applicationService.getStats(email);
+
+        assertEquals(0L, stats.getTotal());
+        for (ApplicationStatus status : ApplicationStatus.values()) {
+            assertEquals(0L, stats.getByStatus().get(status.name()));
+        }
     }
 
 }

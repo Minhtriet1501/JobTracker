@@ -17,13 +17,20 @@ public class ApplicationController {
     private final ApplicationService applicationService;
 
     @GetMapping
-    public List<ApplicationResponse> getAll(@AuthenticationPrincipal UserDetails userDetails ) {
-        return applicationService.getAllApplications(userDetails.getUsername());
+    public List<ApplicationResponse> getAll(@AuthenticationPrincipal UserDetails userDetails,
+                                            @RequestParam(required = false) ApplicationStatus status,
+                                            @RequestParam(required = false) String companyName) {
+        return applicationService.getAllApplications(userDetails.getUsername(), status, companyName);
     }
 
     @GetMapping("/{id}")
     public ApplicationResponse getById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
         return applicationService.getById(id, userDetails.getUsername());
+    }
+
+    @GetMapping("/stats")
+    public ApplicationStatsResponse getStats(@AuthenticationPrincipal UserDetails userDetails){
+        return applicationService.getStats(userDetails.getUsername());
     }
 
     @PostMapping

@@ -3,9 +3,9 @@ package com.jobtracker.backend.interview;
 
 import com.jobtracker.backend.applicaition.Application;
 import com.jobtracker.backend.applicaition.ApplicationRepository;
+import com.jobtracker.backend.common.UnauthorizedException;
 import com.jobtracker.backend.common.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -20,7 +20,7 @@ public class InterviewService {
     private Application getApplication(Long applicationId, String email) {
         Application app = applicationRepository.findById(applicationId).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("UnAuthorized");
+            throw new UnauthorizedException();
         }
         return app;
     }
@@ -56,7 +56,7 @@ public class InterviewService {
     public InterviewResponse update(Long id, InterviewRequest request, String email) {
         Interview interview = interviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Interview not found"));
         if(!interview.getApplication().getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("UnAuthorized");
+            throw new UnauthorizedException();
         }
         interview.setRound(request.getRound());
         interview.setType(request.getType());
@@ -69,7 +69,7 @@ public class InterviewService {
     public void delete(Long id, String email) {
         Interview interview = interviewRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Interview not found"));
         if(!interview.getApplication().getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("UnAuthorized");
+            throw new UnauthorizedException();
         }
         interviewRepository.delete(interview);
     }

@@ -20,9 +20,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<?> handleForbidden(AccessDeniedException e) {
-        return ResponseEntity.status(403).body(Map.of("error", "Forbidden"));
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<?> handleUnauthorized(UnauthorizedException e) {
+        return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -33,6 +33,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<?> handleDuplicateEmail(EmailAlreadyExistsException e) {
         return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<?> handleBadRequest(BadRequestException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
