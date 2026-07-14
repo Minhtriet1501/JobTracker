@@ -1,5 +1,6 @@
 package com.jobtracker.backend.user;
 
+import com.jobtracker.backend.common.EmailAlreadyExistsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,8 +71,32 @@ public class UserServiceTest {
     void registerDuplicateEmailThrowsException() {
         when(userRepository.existsByEmail(email)).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> userService.register(email, password, "Triet"));
+        assertThrows(EmailAlreadyExistsException.class, () -> userService.register(email, password, "Triet"));
     }
 
+    @Test
+    void updateProfileUpdatesNameAndResumeText() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setName("New Name");
+        request.setResumeText("My resume");
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        when(userRepository.save(any(User.class))).thenReturn(mockUser);
+
+        UserResponse result = userService.updateProfile(email, request);
+
+        assertEquals("New Name", mockUser.getName());
+        assertEquals("My resume", mockUser.getResumeText());
+        verify(userRepository).save(mockUser);
+    }
+
+    @Test
+    void updateProfileUserNotFoundThrowsException() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        assertThrows(UsernameNotFoundException.class,
+                () -> userService.updateProfile(email, request));
+    }
 
 }
