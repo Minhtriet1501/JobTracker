@@ -33,6 +33,5 @@ build/
 .vscode/
 
 ### Sensitive config ###
-src/main/resources/application.properties
 .env
 backend/.env
