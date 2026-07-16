@@ -12,5 +12,6 @@ public class InterviewResponse {
     private Integer round;
     private InterviewType type;
     private String notes;
+    private LocalDateTime scheduleAt;
     private InterviewOutcome outcome;
 }

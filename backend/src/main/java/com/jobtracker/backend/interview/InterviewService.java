@@ -32,6 +32,7 @@ public class InterviewService {
         res.setRound(interview.getRound());
         res.setType(interview.getType());
         res.setNotes(interview.getNotes());
+        res.setScheduleAt(interview.getScheduleAt());
         res.setOutcome(interview.getOutcome());
         return res;
     }
