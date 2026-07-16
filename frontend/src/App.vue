@@ -1,18 +1,18 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAuthStore } from './stores/auth.js'
 
 const router = useRouter()
+const auth = useAuthStore()
 
 function logout() {
-  localStorage.removeItem('token')
+  auth.logout()
   router.push('/login')
 }
-
-const isAuth = () => !!localStorage.getItem('token')
 </script>
 
 <template>
-  <nav v-if="isAuth()" class="bg-blue-600 text-white px-6 py-3 flex gap-6 items-center">
+  <nav v-if="auth.isAuthenticated" class="bg-blue-600 text-white px-6 py-3 flex gap-6 items-center">
     <span class="font-bold text-lg">Job Tracker</span>
     <a href="/dashboard" class="hover:underline">Dashboard</a>
     <a href="/applications" class="hover:underline">Applications</a>

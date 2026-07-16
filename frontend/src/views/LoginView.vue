@@ -2,16 +2,18 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const email = ref('')
 const password = ref('')
 const error = ref('')
 const router = useRouter()
+const auth = useAuthStore()
 
 async function login() {
   try {
     const res = await api.post('/auth/login', { email: email.value, password: password.value })
-    localStorage.setItem('token', res.data.token)
+    auth.login(res.data.token)
     router.push('/dashboard')
   } catch (e) {
     error.value = 'Email or Password is incorrect'
