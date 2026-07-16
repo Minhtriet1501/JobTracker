@@ -1,14 +1,17 @@
 package com.jobtracker.backend.ai;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobtracker.backend.applicaition.Application;
 import com.jobtracker.backend.applicaition.ApplicationRepository;
+import com.jobtracker.backend.common.AiServiceException;
 import com.jobtracker.backend.common.BadRequestException;
 import com.jobtracker.backend.common.RateLimitException;
 import com.jobtracker.backend.common.UnauthorizedException;
 import com.jobtracker.backend.common.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,7 +20,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiService {
@@ -77,10 +82,10 @@ public class AiService {
 
         AiAnalysis aiAnalysis = aiAnalysisRepository.findByApplication(app).orElse(new AiAnalysis());
         aiAnalysis.setApplication(app);
-        aiAnalysis.setMatchScore((Integer) parsed.get("matchScore"));
-        aiAnalysis.setSummary((String) parsed.get("summary"));
-        aiAnalysis.setSuggestion((String) parsed.get("suggestion"));
-        aiAnalysis.setInterviewQs((String) parsed.get("interviewQuestions"));
+        aiAnalysis.setMatchScore(coerceMatchScore(parsed.get("matchScore")));
+        aiAnalysis.setSummary(coerceStringField(parsed.get("summary"), "summary"));
+        aiAnalysis.setSuggestion(coerceStringField(parsed.get("suggestion"), "suggestion"));
+        aiAnalysis.setInterviewQs(coerceStringField(parsed.get("interviewQuestions"), "interviewQuestions"));
         aiAnalysisRepository.save(aiAnalysis);
         return toResponse(aiAnalysis);
 
@@ -101,7 +106,7 @@ public class AiService {
 
     private String callClaude(String prompt) throws IOException {
         Map<String, Object> body = Map.of("model", "claude-sonnet-4-5",
-                                           "max_tokens", 1024,
+                                           "max_tokens", 4096,
                                            "messages", List.of((Map.of("role", "user", "content", prompt)))
         );
 
@@ -131,9 +136,88 @@ public class AiService {
         Map<String, Object> responseMap = objectMapper.readValue(responseBody, Map.class);
         List<Map<String, Object>> content = (List<Map<String, Object>>) responseMap.get("content");
         String text = (String) content.get(0).get("text");
-        int start = text.indexOf("{");
-        int end = text.lastIndexOf("}") + 1;
-        return objectMapper.readValue(text.substring(start, end), Map.class);
+
+        String jsonObject = extractJsonObject(text);
+        try {
+            return objectMapper.readValue(jsonObject, Map.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse AI response as JSON. Raw text: {}", text);
+            throw new AiServiceException("AI service returned a response we couldn't understand. Please try again.");
+        }
+    }
+
+    /**
+     * Extracts the first balanced {} object from text by tracking brace depth
+     * and string state, instead of naively matching the first "{" and last "}"
+     * which breaks on stray braces in surrounding prose or a truncated response.
+     */
+    private String extractJsonObject(String text) {
+        int start = text.indexOf('{');
+        if (start == -1) {
+            log.error("No JSON object found in AI response. Raw text: {}", text);
+            throw new AiServiceException("AI service returned a response we couldn't understand. Please try again.");
+        }
+
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                } else if (c == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (c == '"') {
+                inString = true;
+            } else if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return text.substring(start, i + 1);
+                }
+            }
+        }
+
+        log.error("AI response JSON was truncated (likely hit max_tokens). Raw text: {}", text);
+        throw new AiServiceException("AI service response was cut off. Please try again.");
+    }
+
+    private int coerceMatchScore(Object value) {
+        if (value instanceof Integer i) {
+            return i;
+        }
+        if (value instanceof Number n) {
+            return n.intValue();
+        }
+        if (value instanceof String s) {
+            try {
+                return Integer.parseInt(s.trim());
+            } catch (NumberFormatException e) {
+                throw new AiServiceException("AI service returned an invalid matchScore: " + s);
+            }
+        }
+        throw new AiServiceException("AI service returned an unexpected type for matchScore: "
+                + (value == null ? "null" : value.getClass().getSimpleName()));
+    }
+
+    private String coerceStringField(Object value, String fieldName) {
+        if (value instanceof String s) {
+            return s;
+        }
+        if (value instanceof List<?> list) {
+            // Claude sometimes returns a JSON array despite being told not to - join it back
+            // into the "\n"-separated string format the rest of the app expects.
+            return list.stream().map(String::valueOf).collect(Collectors.joining("\n"));
+        }
+        throw new AiServiceException("AI service returned an unexpected type for " + fieldName + ": "
+                + (value == null ? "null" : value.getClass().getSimpleName()));
     }
 
     private AiAnalysisResponse toResponse(AiAnalysis analysis) {
