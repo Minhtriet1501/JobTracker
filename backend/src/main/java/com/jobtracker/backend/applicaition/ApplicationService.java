@@ -1,13 +1,16 @@
 package com.jobtracker.backend.applicaition;
 
 
+import com.jobtracker.backend.ai.AiAnalysisRepository;
 import com.jobtracker.backend.common.UnauthorizedException;
 import com.jobtracker.backend.common.ResourceNotFoundException;
+import com.jobtracker.backend.interview.InterviewRepository;
 import com.jobtracker.backend.user.User;
 import com.jobtracker.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +21,8 @@ import java.util.Map;
 public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final UserRepository userRepository;
+    private final InterviewRepository interviewRepository;
+    private final AiAnalysisRepository aiAnalysisRepository;
 
     private User getUser(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -110,11 +115,14 @@ public class ApplicationService {
         return toResponse(applicationRepository.save(app));
     }
 
+    @Transactional
     public void deleteApplication(Long id, String email) {
         Application app = applicationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Application not found"));
         if(!app.getUser().getEmail().equals(email)) {
             throw new UnauthorizedException();
         }
+        interviewRepository.deleteAll(interviewRepository.findByApplication(app));
+        aiAnalysisRepository.findByApplication(app).ifPresent(aiAnalysisRepository::delete);
         applicationRepository.delete(app);
     }
 }
